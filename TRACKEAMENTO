@@ -1,0 +1,61 @@
+<script>
+function URLToArray(url) {
+  var request = {};
+  if (url.indexOf('?') !== -1) {
+    var pairs = url.substring(url.indexOf('?') + 1).split('&');
+    for (var i = 0; i < pairs.length; i++) {
+      if (!pairs[i]) continue;
+      var pair = pairs[i].split('=');
+      request[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
+    }
+  }
+  return request;
+}
+
+function adicionarUTM(modal = false) {
+  const formularios = Array.from(document.querySelectorAll((modal ? '.gpc_modal ' : '') + 'form'));
+  const utm = URLToArray(window.location.href);
+  
+  let linkUsar = '';
+  if (Object.entries(utm).length) {
+    for (var [key, value] of Object.entries(utm)) { linkUsar += key + '=' + value + '&'; }
+    if (linkUsar.length) { linkUsar = linkUsar.slice(0, -1); }
+  } else {
+    linkUsar = 'src=direto';
+  }
+
+  formularios.forEach(formulario => {
+    const campos = Array.from(formulario.querySelectorAll('.gpc_campo'));
+    campos.forEach(campo => {
+      if (campo.value == '{utm_source}') { campo.value = utm['utm_source'] || ''; }
+      if (campo.value == '{utm_medium}') { campo.value = utm['utm_medium'] || ''; }
+      if (campo.value == '{utm_campaign}') { campo.value = utm['utm_campaign'] || ''; }
+      if (campo.value == '{utm_term}') { campo.value = utm['utm_term'] || ''; }
+      if (campo.value == '{utm_content}') { campo.value = utm['utm_content'] || ''; }
+    });
+
+    const botao = formulario.querySelector('.gpc_botao');
+    if (botao && botao.getAttribute('gpc-link')) {
+      const linkBotao = botao.getAttribute('gpc-link');
+      const concatenar = linkBotao.includes('?') ? '&' : '?';
+      botao.setAttribute('gpc-link', linkBotao + concatenar + linkUsar);
+    }
+  });
+
+  if (linkUsar !== '') {
+    const botoes = Array.from(document.querySelectorAll((modal ? '.gpc_modal ' : '') + '.link_externo'));
+    botoes.forEach(link => {
+      const href = link.getAttribute('href');
+      const concatenar = href.includes('?') ? '&' : '?';
+      link.setAttribute('href', href + concatenar + linkUsar);
+    });
+  }
+}
+
+adicionarUTM();
+$('body').on('click', '.link_popup', function () {
+  setTimeout(() => {
+    adicionarUTM(true);
+  }, 200);
+});
+</script>
